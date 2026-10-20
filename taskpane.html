@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soundbox Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<style>
+:root{
+  --bg:#f5f7fb; --surface:#fff; --border:#e8ecf3; --text:#111827; --muted:#6b7280;
+  --brand:#4f46e5; --brand-soft:#eef2ff;
+  --green:#16a34a; --green-soft:#dcfce7;
+  --blue:#2563eb; --blue-soft:#dbeafe;
+  --red:#dc2626; --red-soft:#fee2e2;
+  --amber:#d97706; --amber-soft:#fef3c7;
+  --gray:#4b5563; --gray-soft:#f3f4f6;
+  --radius:16px;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px -6px rgba(16,24,40,.08);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+h1,h2,h3,h4{margin:0;letter-spacing:-.01em}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.muted{color:var(--muted)}
+.sm{font-size:12.5px}
+.grow{flex:1;min-width:0}
+
+/* layout — task pane is a single narrow column */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:40;background:rgba(245,247,251,.92);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:12px 16px;min-height:60px}
+.brand-logo{width:32px;height:32px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 6px 14px -4px rgba(79,70,229,.55)}
+.topbar h1{font-size:16px;font-weight:700}
+.topbar .sub{font-size:11.5px;color:var(--muted)}
+.topbar .actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+.page{padding:16px;display:flex;flex-direction:column;gap:14px}
+
+/* primitives */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.card-head h3{font-size:14px;font-weight:650}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:550;font-size:13px;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,transform .06s}
+.btn:hover{background:#f9fafb;border-color:#dde3ee}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 6px 16px -6px rgba(79,70,229,.6)}
+.btn-primary:hover{background:#4338ca;border-color:#4338ca}
+.icon-btn{width:34px;height:34px;display:inline-grid;place-items:center;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;flex:none}
+.icon-btn:hover{background:var(--bg);color:var(--text)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.tone-green{background:var(--green-soft);color:#15803d}
+.tone-blue{background:var(--blue-soft);color:#1d4ed8}
+.tone-amber{background:var(--amber-soft);color:#b45309}
+.tone-red{background:var(--red-soft);color:#b91c1c}
+.tone-brand{background:var(--brand-soft);color:#4338ca}
+.tone-gray{background:var(--gray-soft);color:var(--gray)}
+.bar-green{background:var(--green)}.bar-blue{background:var(--blue)}.bar-amber{background:var(--amber)}.bar-red{background:var(--red)}.bar-gray{background:#9ca3af}.bar-brand{background:var(--brand)}
+.spinner{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{padding:32px 18px;text-align:center;color:var(--muted)}
+.empty .e-ico{width:44px;height:44px;border-radius:14px;margin:0 auto 12px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand)}
+.empty h4{font-size:15px;margin-bottom:6px;color:var(--text)}
+
+/* save indicator */
+.si{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--muted);padding:5px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--border);white-space:nowrap}
+.si.ok svg{color:var(--green)}
+.si.warn{color:#92400e}
+.si.err{color:var(--red)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.kpi{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.kpi-top{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:500;font-size:12.5px}
+.kpi-ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none}
+.kpi-val{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.kpi-sub{font-size:11.5px;color:var(--muted)}
+
+/* tables */
+.table-wrap{overflow:auto;-webkit-overflow-scrolling:touch;max-height:52vh}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tbl th{position:sticky;top:0;z-index:1;background:#fafbfd;text-align:left;font-weight:600;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:9px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+.tbl.compact td{padding:6px 12px;line-height:1.3}
+.tbl.compact .pill{height:20px;padding:0 8px;font-size:11px}
+.tbl td.num{color:var(--muted);width:1%}
+.col-branch{min-width:150px}
+.br-code{color:var(--muted);font-weight:500}
+.zero{color:#d1d5db}
+.last b{display:block;font-weight:650}
+.last span{font-size:11px;color:var(--muted)}
+
+/* status overview + alert lists */
+.status-list{list-style:none;margin:0;padding:6px 16px 14px}
+.status-list li{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.status-list li:last-child{border-bottom:0}
+.status-list .sl-dot{width:10px;height:10px;border-radius:50%}
+.status-list .sl-name{font-weight:600}
+.status-list .sl-name small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.status-list .sl-val{text-align:right;font-weight:650}
+.status-list .sl-val small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+.status-list .sl-bar{grid-column:2/4;height:5px;border-radius:999px;background:var(--gray-soft);overflow:hidden}
+.status-list .sl-bar i{display:block;height:100%;border-radius:999px}
+.alert-list{list-style:none;margin:0;padding:4px 16px 12px}
+.alert-list li{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)}
+.alert-list li:last-child{border-bottom:0}
+.alert-count{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:700;flex:none}
+
+/* skeleton */
+.sk{background:linear-gradient(90deg,#eef1f6 25%,#f7f9fc 37%,#eef1f6 63%);background-size:400% 100%;animation:sk 1.3s ease infinite;border-radius:8px}
+@keyframes sk{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+/* toasts */
+#toasts{position:fixed;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;gap:8px;z-index:250}
+.toast{background:#111827;color:#f9fafb;padding:11px 13px;border-radius:11px;box-shadow:0 14px 34px -10px rgba(0,0,0,.45);display:flex;gap:9px;align-items:flex-start;font-size:13px;transform:translateY(10px);opacity:0;transition:transform .22s,opacity .22s}
+.toast.in{transform:none;opacity:1}
+.toast svg{flex:none;margin-top:1px}
+.toast.success svg{color:#4ade80}.toast.error svg{color:#f87171}.toast.info svg{color:#a5b4fc}
+</style>
+</head>
+<body>
+<div class="main">
+  <header class="topbar">
+    <span class="brand-logo" id="logo"></span>
+    <div class="grow">
+      <h1>Soundbox Dashboard</h1>
+      <div class="sub" id="subTitle">Live summary from the serial_devices sheet</div>
+    </div>
+    <div class="actions">
+      <span class="si" id="saveState" hidden></span>
+      <button class="icon-btn" id="btnLock" title="Lock/unlock direct cell editing"></button>
+      <button class="icon-btn" id="btnRefresh" title="Reload data from the workbook"></button>
+      <button class="btn btn-primary" id="btnSync" title="Write the KPI totals into the dashboard sheet">Sync to sheet</button>
+    </div>
+  </header>
+  <section class="page" id="view"></section>
+</div>
+<div id="toasts"></div>
+
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------------------
+   Soundbox Dashboard — Excel task-pane add-in (Dashboard module)
+   Reads the `serial_devices` sheet of the open workbook, computes a live
+   summary, and can write the KPI totals back into the `dashboard` sheet.
+   --------------------------------------------------------------------------- */
+
+/* ---- small helpers ---- */
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const str = v => (v == null ? '' : String(v).trim());
+const pad = (n, w = 2) => String(n).padStart(w, '0');
+const fmtNum = n => (n == null || n === '' || isNaN(n)) ? '0' : Number(n).toLocaleString('en-US');
+const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+/* Excel stores dates as serial numbers (days since 1899-12-30). */
+function excelSerialToDate(n) {
+  const ms = Math.round((n - 25569) * 86400 * 1000); // 25569 = days from 1899-12-30 to 1970-01-01
+  return new Date(ms);
+}
+/* Day-level sort key for a Date-column cell (number serial, Date, or string). */
+function dateKey(v) {
+  if (v == null || v === '') return null;
+  let d = null;
+  if (typeof v === 'number') d = excelSerialToDate(v);
+  else if (v instanceof Date) d = v;
+  else { const t = Date.parse(v); if (!isNaN(t)) d = new Date(t); }
+  if (!d || isNaN(d)) return null;
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/* ---- icons (Feather-style, inline SVG) ---- */
+const IC = {
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  checkCircle: '<circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/>',
+  xCircle: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/>',
+  alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  refresh: '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/>',
+  box: '<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/>',
+  speaker: '<rect x="4" y="2" width="16" height="20" rx="3"/><circle cx="12" cy="14" r="4"/><path d="M12 6h.01"/>',
+  store: '<path d="M3 9 4.5 4h15L21 9"/><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v8h14v-8"/>',
+  rotate: '<path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/>',
+  truck: '<path d="M1 3h15v13H1zM16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+  help: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  unlock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+};
+const icon = (n, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n] || ''}</svg>`;
+
+/* ---- status model (mirrors the Soundbox portal) ---- */
+const STATUSES = ['In-Stock', 'In-Used', 'Return', 'PRTV', 'RTV', 'Lost'];
+const STATUS_TONE = { 'In-Stock': 'green', 'In-Used': 'blue', Return: 'amber', PRTV: 'brand', RTV: 'red', Lost: 'gray' };
+const STATUS_DESC = { 'In-Stock': 'Ready to deploy', 'In-Used': 'Installed at merchants', Return: 'Collected, reusable', PRTV: 'Pending return to vendor', RTV: 'Faulty, sent to vendor', Lost: 'Missing devices' };
+const LOW_STOCK_THRESHOLD = 5;
+const SHEET_STOCK = 'serial_devices';
+const SHEET_DASH = 'dashboard';
+
+function normStatus(v) {
+  const k = str(v).toLowerCase().replace(/[\s_-]/g, '');
+  return { instock: 'In-Stock', inused: 'In-Used', inuse: 'In-Used', return: 'Return', returned: 'Return', prtv: 'PRTV', rtv: 'RTV', lost: 'Lost' }[k] || '';
+}
+
+/* Find a column index by any of a set of header aliases (case/space/underscore-insensitive). */
+function colIndex(headers, aliases) {
+  const norm = s => str(s).toLowerCase().replace(/[\s_-]/g, '');
+  const want = aliases.map(norm);
+  for (let i = 0; i < headers.length; i++) if (want.includes(norm(headers[i]))) return i;
+  return -1;
+}
+
+/* ---- summary (same shape as the portal's Rules.summary) ---- */
+function summarise(headers, rows) {
+  const zero = () => Object.fromEntries(STATUSES.map(s => [s, 0]));
+  const counts = zero(), branches = new Map();
+  let other = 0, total = 0;
+  const iSN = colIndex(headers, ['serial_number', 'S/N', 'SN']);
+  const iS = colIndex(headers, ['device_status', 'status']);
+  const iB = colIndex(headers, ['branch_name', 'SEND TO BRANCH', 'branch']);
+  const iC = colIndex(headers, ['branch_code', 'CODE']);
+  const iD = colIndex(headers, ['date']);
+  for (const row of rows) {
+    if (iSN >= 0 && !str(row[iSN])) continue;   // skip rows with no serial number
+    total++;
+    const st = normStatus(row[iS]);
+    if (st) counts[st]++; else other++;
+    const name = (iB >= 0 && str(row[iB])) || 'Unassigned';
+    let b = branches.get(name.toLowerCase());
+    if (!b) branches.set(name.toLowerCase(), b = { name, code: '', counts: zero(), total: 0, lastKey: null, lastAmount: 0 });
+    if (!b.code && iC >= 0) b.code = str(row[iC]).replace(/\.0$/, '');
+    b.total++;
+    if (st) b.counts[st]++;
+    const k = iD >= 0 ? dateKey(row[iD]) : null;
+    if (k != null) {
+      if (b.lastKey == null || k > b.lastKey) { b.lastKey = k; b.lastAmount = 1; }
+      else if (k === b.lastKey) b.lastAmount++;
+    }
+  }
+  const list = [...branches.values()].sort((a, b) => (a.name === 'Unassigned') - (b.name === 'Unassigned') || a.name.localeCompare(b.name));
+  list.forEach(b => { b.lastDate = b.lastKey == null ? '' : fmtDate(new Date(b.lastKey)); });
+  const lowStock = list.filter(b => b.name !== 'Unassigned' && b.counts['In-Stock'] < LOW_STOCK_THRESHOLD).sort((a, b) => a.counts['In-Stock'] - b.counts['In-Stock']);
+  return { total, counts, other, branches: list, lowStock };
+}
+
+/* =============================================================================
+   Data I/O — the OPEN workbook, via Office.js (Option A, hostable on GitHub Pages).
+   Sheets can be protected (locked) so users cannot type into cells directly; the
+   add-in unlocks → writes → re-locks with a password only it knows.
+   ============================================================================= */
+let LAST = null;            // cached { headers, rows, sum } from the most recent read
+const PROTECT_PWD = 'soundbox';   // password used to lock/unlock the data sheets
+
+/* Read the serial_devices sheet of the open workbook into { headers, rows },
+   or { missing:true } if the sheet is not in this workbook. Reading works even
+   when the sheet is protected. */
+async function readStock() {
+  return Excel.run(async ctx => {
+    const sheet = ctx.workbook.worksheets.getItemOrNullObject(SHEET_STOCK);
+    sheet.load('name');
+    await ctx.sync();
+    if (sheet.isNullObject) return { missing: true };
+    const used = sheet.getUsedRangeOrNullObject(true);
+    used.load('values');
+    await ctx.sync();
+    if (used.isNullObject || !used.values || used.values.length < 1) return { headers: [], rows: [] };
+    const headers = used.values[0].map(h => str(h));
+    return { headers, rows: used.values.slice(1) };
+  });
+}
+
+/* Run a writer against a sheet, temporarily lifting protection if it is locked,
+   then restoring it. `writer(sheet, ctx)` sets values; it must not call sync. */
+async function withWritableSheet(ctx, sheet, writer) {
+  sheet.protection.load('protected');
+  await ctx.sync();
+  const wasProtected = sheet.protection.protected;
+  if (wasProtected) { sheet.protection.unprotect(PROTECT_PWD); await ctx.sync(); }
+  writer(sheet);
+  if (wasProtected) sheet.protection.protect({ allowFormatCells: false }, PROTECT_PWD);
+  await ctx.sync();
+}
+
+/* Write the KPI block into the dashboard sheet of the open workbook (creates it
+   if missing), honouring protection. */
+async function syncToDashboard(sum) {
+  const labels = ['TOTAL DEVICES', 'IN STOCK', 'IN USE', 'RETURN', 'PRTV', 'RTV', 'LOST', 'LOW STOCK BRANCHES'];
+  const values = [
+    sum.total, sum.counts['In-Stock'], sum.counts['In-Used'], sum.counts['Return'],
+    sum.counts['PRTV'], sum.counts['RTV'], sum.counts['Lost'], sum.lowStock.length,
+  ];
+  return Excel.run(async ctx => {
+    let sheet = ctx.workbook.worksheets.getItemOrNullObject(SHEET_DASH);
+    sheet.load('name');
+    await ctx.sync();
+    if (sheet.isNullObject) sheet = ctx.workbook.worksheets.add(SHEET_DASH);
+    await withWritableSheet(ctx, sheet, s => {
+      s.getRange('B1').values = [['Soundbox Dashboard']];
+      s.getRange('B1').format.font.bold = true;
+      s.getRange('B1').format.font.size = 16;
+      s.getRange('B2').values = [['Live · updated ' + fmtDate(new Date())]];
+      s.getRange('B5:I5').values = [labels];
+      s.getRange('B5:I5').format.font.bold = true;
+      s.getRange('B6:I6').values = [values];
+    });
+    sheet.activate();
+    await ctx.sync();
+  });
+}
+
+/* Lock or unlock the data sheets so users can't edit cells directly in Excel. */
+async function setSheetsLocked(locked) {
+  return Excel.run(async ctx => {
+    for (const name of [SHEET_STOCK, SHEET_DASH]) {
+      const sh = ctx.workbook.worksheets.getItemOrNullObject(name);
+      sh.load('name');
+      await ctx.sync();
+      if (sh.isNullObject) continue;
+      sh.protection.load('protected');
+      await ctx.sync();
+      if (locked && !sh.protection.protected) sh.protection.protect({ allowFormatCells: false }, PROTECT_PWD);
+      if (!locked && sh.protection.protected) sh.protection.unprotect(PROTECT_PWD);
+    }
+    await ctx.sync();
+  });
+}
+
+/* Is the serial_devices sheet currently protected? */
+async function isLocked() {
+  return Excel.run(async ctx => {
+    const sh = ctx.workbook.worksheets.getItemOrNullObject(SHEET_STOCK);
+    sh.load('name');
+    await ctx.sync();
+    if (sh.isNullObject) return false;
+    sh.protection.load('protected');
+    await ctx.sync();
+    return sh.protection.protected;
+  });
+}
+
+/* =============================================================================
+   UI
+   ============================================================================= */
+function toast(msg, kind = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`;
+  el.innerHTML = `${icon(kind === 'error' ? 'xCircle' : kind === 'success' ? 'checkCircle' : 'info', 17)}<span>${esc(msg)}</span>`;
+  $('#toasts').appendChild(el);
+  requestAnimationFrame(() => el.classList.add('in'));
+  setTimeout(() => { el.classList.remove('in'); setTimeout(() => el.remove(), 250); }, kind === 'error' ? 6000 : 3200);
+}
+
+function setSave(state, text) {
+  const el = $('#saveState');
+  if (!state) { el.hidden = true; return; }
+  el.hidden = false;
+  el.className = `si ${state === 'saving' ? '' : state === 'ok' ? 'ok' : state === 'err' ? 'err' : 'warn'}`;
+  el.innerHTML = (state === 'saving' ? `<span class="spinner"></span>` : state === 'ok' ? icon('check', 14) : icon('alert', 14)) + `<span>${esc(text)}</span>`;
+}
+
+function skeleton() {
+  const k = `<div class="card kpi"><div class="sk" style="height:13px;width:60%"></div><div class="sk" style="height:24px;width:45%"></div><div class="sk" style="height:10px;width:70%"></div></div>`;
+  const line = `<div class="sk" style="height:15px;margin:14px 16px"></div>`;
+  $('#view').innerHTML = `<div class="kpis">${k.repeat(6)}</div><div class="card"><div class="card-head"><div class="sk" style="height:15px;width:140px"></div></div>${line.repeat(5)}</div>`;
+}
+
+function errorCard(title, msg, actLabel) {
+  $('#view').innerHTML = `<div class="card"><div class="empty"><div class="e-ico">${icon('alert', 22)}</div><h4>${esc(title)}</h4><p>${esc(msg)}</p>${actLabel ? `<button class="btn btn-primary" id="btnRetry">${esc(actLabel)}</button>` : ''}</div></div>`;
+  const b = $('#btnRetry'); if (b) b.onclick = load;
+}
+
+function renderDashboard(sum) {
+  const pct = n => (sum.total ? Math.round((n / sum.total) * 100) : 0);
+  const kpi = (label, val, tone, ico, sub) => `<div class="card kpi"><div class="kpi-top"><span class="kpi-ico tone-${tone}">${icon(ico, 16)}</span>${esc(label)}</div><div class="kpi-val mono">${fmtNum(val)}</div><div class="kpi-sub">${sub}</div></div>`;
+  const kpis =
+    kpi('Total', sum.total, 'brand', 'box', `${sum.branches.length} branch${sum.branches.length === 1 ? '' : 'es'}${sum.other ? ` · ${sum.other} unknown` : ''}`) +
+    kpi('In-Stock', sum.counts['In-Stock'], 'green', 'box', `${pct(sum.counts['In-Stock'])}% · ready`) +
+    kpi('In-Used', sum.counts['In-Used'], 'blue', 'store', `${pct(sum.counts['In-Used'])}% · at merchants`) +
+    kpi('Return', sum.counts.Return, 'amber', 'rotate', `${pct(sum.counts.Return)}% · reusable`) +
+    kpi('PRTV', sum.counts.PRTV, 'brand', 'truck', `${pct(sum.counts.PRTV)}% · pending vendor`) +
+    kpi('RTV', sum.counts.RTV, 'red', 'truck', `${pct(sum.counts.RTV)}% · sent to vendor`) +
+    kpi('Lost', sum.counts.Lost, 'gray', 'help', `${pct(sum.counts.Lost)}% · missing`);
+
+  const BRANCH_STATUSES = STATUSES.filter(st => st !== 'RTV' && st !== 'PRTV');
+  const cnt = (n, st) => (n ? `<span class="pill tone-${STATUS_TONE[st]} mono">${fmtNum(n)}</span>` : '<span class="zero">–</span>');
+  const brRows = sum.branches.map((b, i) => `<tr>
+      <td class="num">${i + 1}</td>
+      <td class="col-branch">${b.code ? `<span class="br-code mono">${esc(b.code)} ·</span> ` : ''}<b>${esc(b.name)}</b></td>
+      ${BRANCH_STATUSES.map(st => `<td>${cnt(b.counts[st], st)}</td>`).join('')}
+      <td class="mono"><b>${fmtNum(b.total)}</b></td>
+      <td class="last">${b.lastDate ? `<b class="mono">${fmtNum(b.lastAmount)}</b><span>${esc(b.lastDate)}</span>` : '<span class="zero">–</span>'}</td>
+    </tr>`).join('');
+  const nB = sum.branches.length;
+  const branchCard = `<div class="card"><div class="card-head"><h3>Branch breakdown</h3><span class="muted sm mono">${fmtNum(nB)} branch${nB === 1 ? '' : 'es'}</span></div>
+    <div class="table-wrap"><table class="tbl compact"><thead><tr><th class="num">#</th><th class="col-branch">Branch</th>${BRANCH_STATUSES.map(s => `<th>${s}</th>`).join('')}<th>Total</th><th>Last Stock</th></tr></thead>
+    <tbody>${brRows || `<tr><td colspan="${BRANCH_STATUSES.length + 4}"><div class="empty">No devices found.</div></td></tr>`}</tbody></table></div></div>`;
+
+  const overview = `<div class="card"><div class="card-head"><h3>Status overview</h3><span class="muted sm mono">${fmtNum(sum.total)} devices</span></div><ul class="status-list">
+    ${STATUSES.map(st => `<li><span class="sl-dot bar-${STATUS_TONE[st]}"></span><span class="sl-name">${st}<small>${STATUS_DESC[st]}</small></span><span class="sl-val mono">${fmtNum(sum.counts[st])}<small>${pct(sum.counts[st])}%</small></span><span class="sl-bar"><i class="bar-${STATUS_TONE[st]}" style="width:${pct(sum.counts[st])}%"></i></span></li>`).join('')}
+  </ul></div>`;
+
+  const low = `<div class="card"><div class="card-head"><div><h3>Low stock alert</h3><div class="muted sm">Branches below ${LOW_STOCK_THRESHOLD} In-Stock</div></div>${sum.lowStock.length ? `<span class="pill tone-red">${sum.lowStock.length}</span>` : ''}</div>
+    ${sum.lowStock.length ? `<ul class="alert-list">${sum.lowStock.map(b => { const n = b.counts['In-Stock']; return `<li><span class="alert-count mono tone-${n === 0 ? 'red' : 'amber'}">${n}</span><div class="grow"><b>${esc(b.name)}</b>${b.code ? ` <span class="muted sm">· ${esc(b.code)}</span>` : ''}<div class="muted sm">Needs ${LOW_STOCK_THRESHOLD - n} more to reach ${LOW_STOCK_THRESHOLD}</div></div></li>`; }).join('')}</ul>`
+      : `<div class="empty" style="padding:22px"><div class="e-ico tone-green">${icon('check', 20)}</div>Every branch has at least ${LOW_STOCK_THRESHOLD} In-Stock.</div>`}</div>`;
+
+  $('#view').innerHTML = `<div class="kpis">${kpis}</div>${branchCard}${overview}${low}`;
+}
+
+/* ---- load / refresh ---- */
+async function load() {
+  skeleton();
+  setSave(null);
+  try {
+    const data = await readStock();
+    if (data.missing) { errorCard(`No “${SHEET_STOCK}” sheet`, 'Open the Soundbox Serials workbook in Excel, then click Retry.', 'Retry'); return; }
+    LAST = data;
+    if (!data.headers.length) { errorCard('The sheet is empty', `“${SHEET_STOCK}” has no rows yet.`, 'Retry'); return; }
+    const sum = summarise(data.headers, data.rows);
+    LAST.sum = sum;
+    renderDashboard(sum);
+    $('#subTitle').textContent = `${fmtNum(sum.total)} devices · updated ${fmtDate(new Date())}`;
+    refreshLockUI();
+  } catch (e) {
+    console.error(e); errorCard('Could not read the workbook', (e && (e.message || e.toString())) || 'Unknown error', 'Retry');
+  }
+}
+
+/* Reflect the current lock state on the toolbar button. */
+async function refreshLockUI() {
+  const btn = $('#btnLock');
+  try {
+    const locked = await isLocked();
+    btn.innerHTML = icon(locked ? 'lock' : 'unlock', 17);
+    btn.style.color = locked ? 'var(--green)' : 'var(--muted)';
+    btn.title = locked ? 'Sheets locked — click to unlock direct editing' : 'Sheets unlocked — click to lock direct editing';
+    btn.dataset.locked = locked ? '1' : '0';
+  } catch { btn.innerHTML = icon('unlock', 17); }
+}
+
+async function toggleLock() {
+  const btn = $('#btnLock');
+  const makeLocked = btn.dataset.locked !== '1';
+  btn.disabled = true;
+  setSave('saving', makeLocked ? 'Locking sheets…' : 'Unlocking sheets…');
+  try {
+    await setSheetsLocked(makeLocked);
+    setSave('ok', makeLocked ? 'Sheets locked' : 'Sheets unlocked');
+    toast(makeLocked ? 'Sheets locked — users can’t edit cells directly; the add-in still can.' : 'Sheets unlocked for direct editing.', 'success');
+    await refreshLockUI();
+  } catch (e) {
+    console.error(e); setSave('err', 'Lock failed'); toast('Could not change protection. ' + ((e && e.message) || ''), 'error');
+  } finally { btn.disabled = false; }
+}
+
+async function sync() {
+  if (!LAST || !LAST.sum) { toast('Load the dashboard first.', 'error'); return; }
+  const btn = $('#btnSync');
+  btn.disabled = true;
+  setSave('saving', 'Writing to sheet…');
+  try {
+    await syncToDashboard(LAST.sum);
+    setSave('ok', 'Synced to dashboard sheet');
+    toast('KPI totals written to the dashboard sheet (B6:I6). Save the workbook to keep them.', 'success');
+  } catch (e) {
+    console.error(e); setSave('err', 'Write failed');
+    toast('Could not write to the sheet. ' + ((e && e.message) || ''), 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ---- boot ---- */
+Office.onReady(info => {
+  $('#logo').innerHTML = icon('speaker', 18);
+  $('#btnRefresh').innerHTML = icon('refresh', 17);
+  $('#btnLock').innerHTML = icon('unlock', 17);
+  $('#btnRefresh').onclick = load;
+  $('#btnLock').onclick = toggleLock;
+  $('#btnSync').onclick = sync;
+  if (info.host !== Office.HostType.Excel) {
+    errorCard('Open this in Excel', 'This add-in runs inside the Excel task pane.');
+    return;
+  }
+  load();
+});
+</script>
+</body>
+</html>
